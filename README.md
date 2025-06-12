@@ -1,2 +1,4 @@
-# egui-litecode
+# Egui Litecode
 Egui litecode code-editor
+
+Code-editor, in development.
