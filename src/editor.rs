@@ -18,7 +18,7 @@ impl CodeEditor {
         let ts = ThemeSet::load_defaults();
         let syntax = ps
             .find_syntax_by_extension(language)
-            .unwrap_or_else(|| ps.find_syntax_plain_text());
+            .unwrap_or_else(|| ps.find_syntax_plain_text()).clone();
 
         Self {
             text,
@@ -29,7 +29,7 @@ impl CodeEditor {
         }
     }
 
-    pub fn ui(&mut self, ui: &mut egui::Ui) -> egui::Response {
+    pub fn ui(&mut self, ui: &mut egui::Ui) {
         let desired_height = ui.spacing().interact_size.y * 20.0;
         ScrollArea::vertical()
             .auto_shrink([false; 2])
@@ -46,8 +46,7 @@ impl CodeEditor {
                         ui.add(Label::new(layout_job).sense(Sense::click()));
                     });
                 }
-            })
-            .inner
+            });
     }
 
     fn highlight_to_job<'a>(
