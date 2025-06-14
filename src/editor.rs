@@ -1,77 +1,111 @@
-use egui::{self, Label, RichText, ScrollArea, Sense};
+use egui::{Color32, FontId, TextEdit, TextFormat, Ui};
+use egui::text::LayoutJob;
+use std::fmt;
+use std::sync::Arc;
 use syntect::easy::HighlightLines;
-use syntect::highlighting::ThemeSet;
-use syntect::parsing::SyntaxSet;
-use syntect::util::LinesWithEndings;
+use syntect::highlighting::{Theme, ThemeSet, Style};
+use syntect::parsing::{SyntaxSet, SyntaxReference};
 
 pub struct CodeEditor {
-    pub text: String,
-    scroll: f32,
-    ps: SyntaxSet,
-    theme: syntect::highlighting::Theme,
-    syntax: syntect::parsing::SyntaxReference,
+    pub code: String,
+    syntax_set: SyntaxSet,
+    theme: Arc<Theme>,
+    syntax: &'static SyntaxReference,
+    highlighter: Option<HighlightLines<'static>>,
+}
+
+impl Clone for CodeEditor {
+    fn clone(&self) -> Self {
+        CodeEditor {
+            code: self.code.clone(),
+            syntax_set: self.syntax_set.clone(),
+            theme: self.theme.clone(),
+            syntax: self.syntax, // static reference, just copy
+            highlighter: None,   // do not clone highlighter
+        }
+    }
+}
+
+impl fmt::Debug for CodeEditor {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("CodeEditor")
+            .field("code", &self.code)
+            .field("syntax_set", &"...")
+            .field("theme", &"...")
+            .field("syntax", &self.syntax.name)
+            .field("highlighter", &self.highlighter.is_some())
+            .finish()
+    }
+}
+
+impl PartialEq for CodeEditor {
+    fn eq(&self, other: &Self) -> bool {
+        self.code == other.code
+            && self.theme == other.theme
+            && std::ptr::eq(self.syntax, other.syntax)
+    }
 }
 
 impl CodeEditor {
-    pub fn new(text: String, language: &str) -> Self {
+    pub fn new() -> Self {
         let ps = SyntaxSet::load_defaults_newlines();
         let ts = ThemeSet::load_defaults();
-        let syntax = ps
-            .find_syntax_by_extension(language)
-            .unwrap_or_else(|| ps.find_syntax_plain_text()).clone();
+        let theme = Arc::new(ts.themes["base16-ocean.dark"].clone());
+        let syntax = ps.find_syntax_by_extension("rs").unwrap(); // force unwrap safe here
 
         Self {
-            text,
-            scroll: 0.0,
-            ps,
-            theme: ts.themes["InspiredGitHub"].clone(),
-            syntax: syntax.clone(),
+            code: "".into(),
+            syntax_set: ps.clone(),
+            theme,
+            syntax: Box::leak(Box::new(syntax.clone())), // static lifetime workaround
+            highlighter: None,
         }
     }
 
-    pub fn ui(&mut self, ui: &mut egui::Ui) {
-        let desired_height = ui.spacing().interact_size.y * 20.0;
-        ScrollArea::vertical()
-            .auto_shrink([false; 2])
-            .max_height(desired_height)
-            .show(ui, |ui| {
-                let mut hl = HighlightLines::new(&self.syntax, &self.theme);
+    pub fn ui(&mut self, ui: &mut Ui) -> egui::Response {
+        let font = FontId::monospace(14.0);
 
-                for (i, line) in LinesWithEndings::from(&self.text).enumerate() {
-                    let ranges = hl.highlight_line(line, &self.ps).unwrap_or_default();
-                    let layout_job = Self::highlight_to_job(line, &ranges);
+        // Reset highlighter for fresh state
+        let mut highlighter = HighlightLines::new(self.syntax, &self.theme);
 
-                    ui.horizontal(|ui| {
-                        ui.label(RichText::new(format!("{:>3}", i + 1)).monospace().weak());
-                        ui.add(Label::new(layout_job).sense(Sense::click()));
-                    });
+        let mut layouter = {
+            let font = font.clone();
+            let syntax_set = self.syntax_set.clone();
+            let mut highlighter = HighlightLines::new(self.syntax, &self.theme);
+
+            Box::new(move |ui: &Ui, line: &str, wrap_width: f32| {
+                let mut job = LayoutJob::default();
+
+                if let Ok(ranges) = highlighter.highlight_line(line, &syntax_set) {
+                    for (style, text) in ranges {
+                        let color = Color32::from_rgb(
+                            style.foreground.r,
+                            style.foreground.g,
+                            style.foreground.b,
+                        );
+
+                        job.append(
+                            text,
+                            0.0,
+                            TextFormat {
+                                font_id: font.clone(),
+                                color,
+                                ..Default::default()
+                            },
+                        );
+                    }
                 }
-            });
-    }
 
-    fn highlight_to_job<'a>(
-        _line: &'a str,
-        ranges: &[(syntect::highlighting::Style, &'a str)],
-    ) -> egui::text::LayoutJob {
-        let mut job = egui::text::LayoutJob::default();
-        for &(style, text) in ranges {
-            let color =
-                egui::Color32::from_rgb(style.foreground.r, style.foreground.g, style.foreground.b);
-            let format = egui::TextFormat {
-                font_id: egui::FontId::monospace(14.0),
-                color,
-                ..Default::default()
-            };
-            job.append(text, 0.0, format);
-        }
-        job
-    }
+                job.wrap.max_width = wrap_width;
+                ui.fonts(|f| f.layout_job(job))
+            }) as Box<dyn FnMut(&Ui, &str, f32) -> Arc<egui::Galley>>
+        };
 
-    pub fn get_code(&self) -> &str {
-        &self.text
-    }
-
-    pub fn set_code(&mut self, new_code: String) {
-        self.text = new_code;
+        ui.add(
+            TextEdit::multiline(&mut self.code)
+                .font(font)
+                .desired_width(f32::INFINITY)
+                .layouter(&mut layouter),
+        )
     }
 }
