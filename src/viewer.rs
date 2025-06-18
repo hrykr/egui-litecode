@@ -6,7 +6,7 @@ use syntect::easy::HighlightLines;
 use syntect::highlighting::{Theme, ThemeSet, Style};
 use syntect::parsing::{SyntaxSet, SyntaxReference};
 
-pub struct CodeEditor {
+pub struct CodeViewer {
     pub code: String,
     syntax_set: SyntaxSet,
     theme: Arc<Theme>,
@@ -14,9 +14,9 @@ pub struct CodeEditor {
     highlighter: Option<HighlightLines<'static>>,
 }
 
-impl Clone for CodeEditor {
+impl Clone for CodeViewer {
     fn clone(&self) -> Self {
-        CodeEditor {
+        CodeViewer {
             code: self.code.clone(),
             syntax_set: self.syntax_set.clone(),
             theme: self.theme.clone(),
@@ -26,7 +26,7 @@ impl Clone for CodeEditor {
     }
 }
 
-impl fmt::Debug for CodeEditor {
+impl fmt::Debug for CodeViewer {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("CodeEditor")
             .field("code", &self.code)
@@ -38,7 +38,7 @@ impl fmt::Debug for CodeEditor {
     }
 }
 
-impl PartialEq for CodeEditor {
+impl PartialEq for CodeViewer {
     fn eq(&self, other: &Self) -> bool {
         self.code == other.code
             && self.theme == other.theme
@@ -46,7 +46,7 @@ impl PartialEq for CodeEditor {
     }
 }
 
-impl CodeEditor {
+impl CodeViewer {
     pub fn new() -> Self {
         let ps = SyntaxSet::load_defaults_newlines();
         let ts = ThemeSet::load_defaults();
@@ -105,6 +105,7 @@ impl CodeEditor {
             TextEdit::multiline(&mut self.code)
                 .font(font)
                 .desired_width(f32::INFINITY)
+                .interactive(false)
                 .code_editor()
                 .layouter(&mut layouter),
         )
