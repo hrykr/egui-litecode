@@ -6,6 +6,13 @@ use syntect::easy::HighlightLines;
 use syntect::highlighting::{Theme, ThemeSet, Style};
 use syntect::parsing::{SyntaxSet, SyntaxReference};
 
+/// Basical code viewer widget for [egui](https://crates.io/crates/egui), supporting syntax highlighting and themes.
+/// 
+/// # Implement
+/// 
+/// Use `CodeEditor::new(syntax_ext, color_theme)` to create a new instance.\
+/// Set the `code` field to the code you want to display.\
+/// Then use call `ui` method to integrate it into your egui application.
 pub struct CodeViewer {
     pub code: String,
     syntax_set: SyntaxSet,
@@ -47,11 +54,11 @@ impl PartialEq for CodeViewer {
 }
 
 impl CodeViewer {
-    pub fn new() -> Self {
+    pub fn new(syntax_ext: &str, color_theme: &str) -> Self {
         let ps = SyntaxSet::load_defaults_newlines();
         let ts = ThemeSet::load_defaults();
-        let theme = Arc::new(ts.themes["base16-ocean.dark"].clone());
-        let syntax = ps.find_syntax_by_extension("py").unwrap(); // force unwrap safe here
+        let theme = Arc::new(ts.themes[color_theme].clone());
+        let syntax = ps.find_syntax_by_extension(syntax_ext).unwrap(); // force unwrap safe here
 
         Self {
             code: "".into(),
@@ -109,5 +116,22 @@ impl CodeViewer {
                 .code_editor()
                 .layouter(&mut layouter),
         )
+    }
+}
+
+impl Default for CodeViewer {
+    fn default() -> Self {
+        let ps = SyntaxSet::load_defaults_newlines();
+        let ts = ThemeSet::load_defaults();
+        let theme = Arc::new(ts.themes["base16-ocean.dark"].clone());
+        let syntax = ps.find_syntax_by_extension("rs").unwrap(); // force unwrap safe here
+
+        Self {
+            code: "".into(),
+            syntax_set: ps.clone(),
+            theme,
+            syntax: Box::leak(Box::new(syntax.clone())), // static lifetime workaround
+            highlighter: None,
+        }
     }
 }

@@ -2,6 +2,19 @@
 name = "egui_litecode"
 version = "0.1.0"
 edition = "2024"
+authors = ["Hryhorii Kravtsov kravtsov.hryhorii@gmail.com"]
+description = "Basical egui code editor with syntax highlighting"
+license = "MIT"
+repository = "https://github.com/hrykr/egui-litecode"
+homepage = "https://github.com/hrykr/egui-litecode"
+readme = "README.md"
+keywords = ["egui", "code", "code editor", "syntax highlighting"]
+categories = ["text-editors",
+    "gui",
+    "development-tools::editor-plugins",
+    "development-tools::debugging",
+    "visualization",
+]
 
 [dependencies]
 egui = "0.31.1"
