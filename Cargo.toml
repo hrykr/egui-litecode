@@ -8,7 +8,7 @@ license = "MIT"
 repository = "https://github.com/hrykr/egui-litecode"
 homepage = "https://github.com/hrykr/egui-litecode"
 readme = "README.md"
-keywords = ["egui", "code", "code editor", "syntax highlighting"]
+keywords = ["egui", "code", "code_editor", "syntax_highlighting"]
 categories = ["text-editors",
     "gui",
     "development-tools::editor-plugins",
