@@ -11,8 +11,6 @@ readme = "README.md"
 keywords = ["egui", "code", "code_editor", "syntax_highlighting"]
 categories = ["text-editors",
     "gui",
-    "development-tools::editor-plugins",
-    "development-tools::debugging",
     "visualization",
 ]
 
