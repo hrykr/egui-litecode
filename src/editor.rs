@@ -1,4 +1,4 @@
-use egui::{Color32, FontId, TextEdit, TextFormat, Ui};
+use egui::{Color32, FontId, Galley, TextEdit, TextFormat, Ui};
 use egui::text::LayoutJob;
 use std::fmt;
 use std::sync::Arc;
@@ -74,32 +74,44 @@ impl CodeEditor {
 
     pub fn ui(&mut self, ui: &mut Ui) -> egui::Response {
         let font = FontId::monospace(14.0);
-
-        // Reset highlighter for fresh state
-        let mut highlighter = HighlightLines::new(self.syntax, &self.theme);
+        let syntax_set = self.syntax_set.clone();
+        let theme = self.theme.clone();
+        let syntax = self.syntax;
 
         let mut layouter = {
             let font = font.clone();
-            let syntax_set = self.syntax_set.clone();
-            let mut highlighter = HighlightLines::new(self.syntax, &self.theme);
-
-            Box::new(move |ui: &Ui, line: &str, wrap_width: f32| {
+            Box::new(move |ui: &Ui, text_buffer: &dyn egui::TextBuffer, wrap_width: f32| {
                 let mut job = LayoutJob::default();
+                let mut highlighter = HighlightLines::new(syntax, &theme);
+                let text = text_buffer.as_str();
 
-                if let Ok(ranges) = highlighter.highlight_line(line, &syntax_set) {
-                    for (style, text) in ranges {
-                        let color = Color32::from_rgb(
-                            style.foreground.r,
-                            style.foreground.g,
-                            style.foreground.b,
-                        );
+                for (i, line) in text.lines().enumerate() {
+                    if let Ok(ranges) = highlighter.highlight_line(line, &syntax_set) {
+                        for (style, text) in ranges {
+                            let color = Color32::from_rgb(
+                                style.foreground.r,
+                                style.foreground.g,
+                                style.foreground.b,
+                            );
+                            job.append(
+                                text,
+                                0.0,
+                                TextFormat {
+                                    font_id: font.clone(),
+                                    color,
+                                    ..Default::default()
+                                },
+                            );
+                        }
+                    }
 
+                    if i + 1 < text.lines().count() {
                         job.append(
-                            text,
+                            "\n",
                             0.0,
                             TextFormat {
                                 font_id: font.clone(),
-                                color,
+                                color: Color32::WHITE,
                                 ..Default::default()
                             },
                         );
@@ -108,7 +120,7 @@ impl CodeEditor {
 
                 job.wrap.max_width = wrap_width;
                 ui.fonts(|f| f.layout_job(job))
-            }) as Box<dyn FnMut(&Ui, &str, f32) -> Arc<egui::Galley>>
+            }) as Box<dyn FnMut(&Ui, &dyn egui::TextBuffer, f32) -> Arc<Galley>>
         };
 
         ui.add(
