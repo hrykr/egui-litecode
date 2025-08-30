@@ -58,7 +58,7 @@ impl CodeViewer {
         let ps = SyntaxSet::load_defaults_newlines();
         let ts = ThemeSet::load_defaults();
         let theme = Arc::new(ts.themes[color_theme].clone());
-        let syntax = ps.find_syntax_by_extension(syntax_ext).unwrap(); // force unwrap safe here
+        let syntax = ps.find_syntax_by_extension(syntax_ext).unwrap_or(ps.find_syntax_by_extension("rs").unwrap());
 
         Self {
             code: "".into(),
@@ -137,7 +137,7 @@ impl Default for CodeViewer {
         let ps = SyntaxSet::load_defaults_newlines();
         let ts = ThemeSet::load_defaults();
         let theme = Arc::new(ts.themes["base16-ocean.dark"].clone());
-        let syntax = ps.find_syntax_by_extension("rs").unwrap(); // force unwrap safe here
+        let syntax = ps.find_syntax_by_extension("rs").unwrap();
 
         Self {
             code: "".into(),

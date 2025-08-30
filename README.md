@@ -14,5 +14,5 @@ Basical egui code editor/viewer.
 > or
 ```toml
 [dependencies]
-egui_litecode = "0.1.1"
+egui_litecode = "0.1.2"
 ```

@@ -1,6 +1,6 @@
 [package]
 name = "egui_litecode"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 authors = ["Hryhorii Kravtsov kravtsov.hryhorii@gmail.com"]
 description = "Basical egui code editor with syntax highlighting"
@@ -15,5 +15,5 @@ categories = ["text-editors",
 ]
 
 [dependencies]
-egui = "0.32.0"
+egui = "0.32.1"
 syntect = "5.2"
